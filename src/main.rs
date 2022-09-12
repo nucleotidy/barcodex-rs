@@ -1,5 +1,4 @@
-use bio_types::sequence::SequenceRead;
-use clap::Clap;
+use clap::Parser;
 use std::io::BufRead;
 
 lazy_static::lazy_static! {
@@ -274,14 +273,14 @@ impl Output {
     ///
     /// Panics if there was no input
     fn name(self: &Self) -> &[u8] {
-        self.read().name()
+        self.read().id().as_bytes()
     }
     /// Get the input sequence associated which generated this output.
     ///
     /// Panics if there was no input
     fn read(self: &Self) -> &bio::io::fastq::Record {
         match self {
-            Output::Empty => panic!("Trying to get seqeuence of empty record."),
+            Output::Empty => panic!("Trying to get sequence of empty record."),
             Output::Discard(record) => record,
             Output::Valid {
                 input,
@@ -448,61 +447,57 @@ fn write_stats(
     .unwrap();
 }
 
-#[derive(clap::Clap)]
+#[derive(Parser)]
 #[clap(
     version = "0.1",
     author = "Andre Masella <andre.masella@oicr.on.ca>",
-    about = "A package for extracting Unique Molecular Identifiers (UMIs) from single or paired read sequencing data"
+    //help = "A package for extracting Unique Molecular Identifiers (UMIs) from single or paired read sequencing data"
 )]
 struct Opts {
-    #[clap(long, about = "Path to file with valid UMIs (1st column)")]
+    #[clap(long, help = "Path to file with valid UMIs (1st column)")]
     umilist: String,
-    #[clap(long, about = "The prefix for output data files.")]
+    #[clap(long, help = "The prefix for output data files.")]
     prefix: String,
     #[clap(
         long,
-        default_value = "_",
-        about = "String separating the UMI sequence in the read name"
+        default_value = ":",
+        help = "String separating the UMI sequence in the read name"
     )]
     separator: String,
     #[clap(subcommand)]
     subcmd: SubCommand,
 }
-#[derive(Clap)]
+#[derive(Parser)]
 enum SubCommand {
     #[clap(
         name = "inline",
-        about = "Extract UMIs where the UMI is mixed with the sequence."
+        //help = "Extract UMIs where the UMI is mixed with the sequence."
     )]
     Inline {
-        #[clap(long, required = true, about = "Path to input FASTQ 1")]
+        #[clap(long, required = true, help = "Path to input FASTQ 1")]
         r1_in: Vec<String>,
-        #[clap(long, about = "Path to input FASTQ 2")]
+        #[clap(long, help = "Path to input FASTQ 2")]
         r2_in: Vec<String>,
-        #[clap(long, about = "Barcode string or regex for extracting UMIs in read 1")]
+        #[clap(long, help = "Barcode string or regex for extracting UMIs in read 1")]
         pattern1: String,
-        #[clap(long, about = "Barcode string or regex for extracting UMIs in read 2")]
+        #[clap(long, help = "Barcode string or regex for extracting UMIs in read 2")]
         pattern2: Option<String>,
         #[clap(
             long,
-            about = "Require the regex to inclreach to the enf the input read."
+            help = "Require the regex to inclreach to the enf the input read."
         )]
         full_match: bool,
     },
     #[clap(
         name = "separate",
-        about = "Extract UMIs where the UMI is in a separate read."
+        //help = "Extract UMIs where the UMI is in a separate read."
     )]
     Separate {
-        #[clap(
-            long,
-            required = true,
-            about = "Path to input FASTQ containing the UMI"
-        )]
+        #[clap(long, required = true, help = "Path to input FASTQ containing the UMI")]
         ru_in: Vec<String>,
-        #[clap(long, required = true, about = "Path to input FASTQ 1")]
+        #[clap(long, required = true, help = "Path to input FASTQ 1")]
         r1_in: Vec<String>,
-        #[clap(long, about = "Path to input FASTQ 2")]
+        #[clap(long, help = "Path to input FASTQ 2")]
         r2_in: Vec<String>,
     },
 }
@@ -554,6 +549,7 @@ fn read_umi_list_paired(umilist: &str) -> std::collections::HashMap<String, usiz
 
 fn main() {
     let args = Opts::parse();
+
     // Figure out which case we are in, because there are so many
     std::process::exit(match args.subcmd {
         SubCommand::Inline {
